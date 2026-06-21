@@ -33,9 +33,9 @@ public class Mesh {
         landscapeTextureScale = scale;
     }
 
-    final int vaoId;
-    private final int vboId;
-    private final int eboId;
+    int vaoId;
+    private int vboId;
+    private int eboId;
     final int vertexCount;
     final Texture diffuseTexture;
     private final Texture ambientTexture;
@@ -139,48 +139,50 @@ public class Mesh {
         this.collisionVertices = List.copyOf(vertices);
         this.collisionIndices = List.copyOf(indices);
 
+        initGlResources(vertices, normals, texCoords, vertexColors, indices);
+    }
+
+    private void initGlResources(
+        List<Vector3f> vertices,
+        List<Vector3f> normals,
+        List<Vector3f> texCoords,
+        List<Vector4f> vertexColors,
+        List<Integer> indices
+    ) {
+        int stride = 12 * Float.BYTES;
         vaoId = glGenVertexArrays();
         glBindVertexArray(vaoId);
 
-        int stride = 12 * Float.BYTES;
+        vboId = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, vboId);
         FloatBuffer verticesBuffer = memAllocFloat(vertices.size() * 12);
-        try {
-            for (int i = 0; i < vertices.size(); i++) {
-                verticesBuffer.put(vertices.get(i).x).put(vertices.get(i).y).put(vertices.get(i).z);
-                verticesBuffer.put(normals.get(i).x).put(normals.get(i).y).put(normals.get(i).z);
-                verticesBuffer.put(texCoords.get(i).x).put(texCoords.get(i).y);
-                Vector4f vc = vertexColors.get(i);
-                verticesBuffer.put(vc.x).put(vc.y).put(vc.z).put(vc.w);
-            }
-            verticesBuffer.flip();
-
-            vboId = glGenBuffers();
-            glBindBuffer(GL_ARRAY_BUFFER, vboId);
-            glBufferData(GL_ARRAY_BUFFER, verticesBuffer, GL_STATIC_DRAW);
-
-            glVertexAttribPointer(0, 3, GL_FLOAT, false, stride, 0);
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(1, 3, GL_FLOAT, false, stride, 3 * Float.BYTES);
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(2, 2, GL_FLOAT, false, stride, 6 * Float.BYTES);
-            glEnableVertexAttribArray(2);
-            glVertexAttribPointer(3, 4, GL_FLOAT, false, stride, 8 * Float.BYTES);
-            glEnableVertexAttribArray(3);
-        } finally {
-            memFree(verticesBuffer);
+        for (int i = 0; i < vertices.size(); i++) {
+            verticesBuffer.put(vertices.get(i).x).put(vertices.get(i).y).put(vertices.get(i).z);
+            verticesBuffer.put(normals.get(i).x).put(normals.get(i).y).put(normals.get(i).z);
+            verticesBuffer.put(texCoords.get(i).x).put(texCoords.get(i).y);
+            Vector4f vc = vertexColors.get(i);
+            verticesBuffer.put(vc.x).put(vc.y).put(vc.z).put(vc.w);
         }
+        verticesBuffer.flip();
+        glBufferData(GL_ARRAY_BUFFER, verticesBuffer, GL_STATIC_DRAW);
+        memFree(verticesBuffer);
 
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, stride, 0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, false, stride, 3 * Float.BYTES);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(2, 2, GL_FLOAT, false, stride, 6 * Float.BYTES);
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(3, 4, GL_FLOAT, false, stride, 8 * Float.BYTES);
+        glEnableVertexAttribArray(3);
+
+        eboId = glGenBuffers();
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboId);
         IntBuffer indicesBuffer = memAllocInt(indices.size());
-        try {
-            indices.forEach(indicesBuffer::put);
-            indicesBuffer.flip();
-
-            eboId = glGenBuffers();
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboId);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL_STATIC_DRAW);
-        } finally {
-            memFree(indicesBuffer);
-        }
+        indices.forEach(indicesBuffer::put);
+        indicesBuffer.flip();
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL_STATIC_DRAW);
+        memFree(indicesBuffer);
 
         glBindVertexArray(0);
     }

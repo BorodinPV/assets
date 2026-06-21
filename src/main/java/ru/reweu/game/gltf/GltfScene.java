@@ -52,6 +52,7 @@ public final class GltfScene {
 
     private final GltfModel gltfModel;
     private final GltfMaterialExtensionFlags materialExtensionFlags;
+    private final GltfRenderConfig config;
     /** Индекс материала по ссылке (jgltf), без {@code List#indexOf} при сортировке примитивов. */
     private final Map<MaterialModel, Integer> materialIndexByIdentity;
     private final GltfTextureRegistry textures;
@@ -65,12 +66,13 @@ public final class GltfScene {
     private final Matrix4f tmpModel = new Matrix4f();
     private final Matrix4f[] instBatchMatrices;
 
-    public GltfScene(GltfModel model, GltfMaterialExtensionFlags materialExtensionFlags) {
+    public GltfScene(GltfModel model, GltfMaterialExtensionFlags materialExtensionFlags, GltfRenderConfig config) {
         this.instBatchMatrices = new Matrix4f[GltfPbrRenderer.MAX_GLTF_INSTANCED_BATCH];
         for (int i = 0; i < instBatchMatrices.length; i++) {
             instBatchMatrices[i] = new Matrix4f();
         }
         this.gltfModel = model;
+        this.config = config != null ? config : GltfRenderConfig.defaults();
         this.materialExtensionFlags = materialExtensionFlags != null
             ? materialExtensionFlags
             : GltfMaterialExtensionFlags.empty();
@@ -103,10 +105,10 @@ public final class GltfScene {
         this.textures.preflightDecodeAll();
     }
 
-    public static GltfScene load(Path path) throws IOException {
+    public static GltfScene load(Path path, GltfRenderConfig config) throws IOException {
         GltfModel m = new GltfModelReader().read(path);
         GltfMaterialExtensionFlags ext = GltfMaterialExtensions.readFromGlb(path);
-        return new GltfScene(m, ext);
+        return new GltfScene(m, ext, config);
     }
 
     /**
@@ -314,7 +316,8 @@ public final class GltfScene {
                     view,
                     projection,
                     gltfModel,
-                    materialExtensionFlags
+                    materialExtensionFlags,
+                    config
                 );
                 i = j;
             }
@@ -358,7 +361,8 @@ public final class GltfScene {
             projection,
             null,
             gltfModel,
-            materialExtensionFlags
+            materialExtensionFlags,
+            config
         );
     }
 

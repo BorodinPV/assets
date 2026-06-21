@@ -214,19 +214,9 @@ public class ModelLoader {
 
         AIMaterial material = AIMaterial.create(scene.mMaterials().get(aiMesh.mMaterialIndex()));
 
-        // Загрузка различных текстур (glTF PBR: baseColor часто только в BASE_COLOR, не в DIFFUSE)
-        Texture diffuseTexture = loadMaterialTexture(material, aiTextureType_DIFFUSE, modelDir, scene, true);
-        if (diffuseTexture == null) {
-            diffuseTexture = loadMaterialTexture(material, aiTextureType_BASE_COLOR, modelDir, scene, true);
-        }
+        Texture diffuseTexture = loadDiffuseTexture(material, modelDir, scene);
         Texture ambientTexture = loadMaterialTexture(material, aiTextureType_AMBIENT, modelDir, scene, true);
-        Texture specularTexture = loadMaterialTexture(material, aiTextureType_SPECULAR, modelDir, scene, false);
-        if (specularTexture == null) {
-            specularTexture = loadMaterialTexture(material, aiTextureType_METALNESS, modelDir, scene, false);
-        }
-        if (specularTexture == null) {
-            specularTexture = loadMaterialTexture(material, aiTextureType_DIFFUSE_ROUGHNESS, modelDir, scene, false);
-        }
+        Texture specularTexture = loadSpecularTexture(material, modelDir, scene);
         Texture normalTexture = loadMaterialTexture(material, aiTextureType_NORMALS, modelDir, scene, false);
         Texture alphaTexture = loadMaterialTexture(material, aiTextureType_OPACITY, modelDir, scene, false);
         Texture specularHighlightTexture =
@@ -387,6 +377,25 @@ public class ModelLoader {
             }
         }
         return 1.0f;
+    }
+
+    private static Texture loadDiffuseTexture(AIMaterial material, String modelDir, AIScene scene) {
+        Texture t = loadMaterialTexture(material, aiTextureType_DIFFUSE, modelDir, scene, true);
+        if (t == null) {
+            t = loadMaterialTexture(material, aiTextureType_BASE_COLOR, modelDir, scene, true);
+        }
+        return t;
+    }
+
+    private static Texture loadSpecularTexture(AIMaterial material, String modelDir, AIScene scene) {
+        Texture t = loadMaterialTexture(material, aiTextureType_SPECULAR, modelDir, scene, false);
+        if (t == null) {
+            t = loadMaterialTexture(material, aiTextureType_METALNESS, modelDir, scene, false);
+        }
+        if (t == null) {
+            t = loadMaterialTexture(material, aiTextureType_DIFFUSE_ROUGHNESS, modelDir, scene, false);
+        }
+        return t;
     }
 
 }

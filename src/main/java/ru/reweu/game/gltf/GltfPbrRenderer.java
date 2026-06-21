@@ -48,12 +48,6 @@ public final class GltfPbrRenderer {
     /** Совпадает с {@code u_modelBatch[64]} в шейдерах. */
     public static final int MAX_GLTF_INSTANCED_BATCH = 64;
 
-    private static GltfRenderConfig config = GltfRenderConfig.defaults();
-
-    public static void setConfig(GltfRenderConfig cfg) {
-        config = cfg;
-    }
-
     private static final class LastMaterial {
         int programId = -1;
         int materialIndex = Integer.MIN_VALUE;
@@ -88,7 +82,8 @@ public final class GltfPbrRenderer {
         Matrix4f projection,
         float[] morphWeightsOverride,
         GltfModel gltfModel,
-        GltfMaterialExtensionFlags materialExtensionFlags
+        GltfMaterialExtensionFlags materialExtensionFlags,
+        GltfRenderConfig config
     ) {
         GltfProgramUniforms u = GltfProgramUniforms.forProgram(shader);
         shader.use();
@@ -97,7 +92,7 @@ public final class GltfPbrRenderer {
         shader.setUniformMat4At(u.model, modelMatrix);
         shader.setUniformMat4At(u.view, view);
         shader.setUniformMat4At(u.projection, projection);
-        bindMaterial(u, textures, mesh.material, mesh.materialModelIndex, gltfModel, materialExtensionFlags);
+        bindMaterial(u, textures, mesh.material, mesh.materialModelIndex, gltfModel, materialExtensionFlags, config);
         drawIndexedDoubleSided(mesh);
     }
 
@@ -133,7 +128,8 @@ public final class GltfPbrRenderer {
         Matrix4f view,
         Matrix4f projection,
         GltfModel gltfModel,
-        GltfMaterialExtensionFlags materialExtensionFlags
+        GltfMaterialExtensionFlags materialExtensionFlags,
+        GltfRenderConfig config
     ) {
         if (count <= 0 || count > MAX_GLTF_INSTANCED_BATCH) {
             return;
@@ -144,7 +140,7 @@ public final class GltfPbrRenderer {
         uploadJointBufferMorphAndSkin(u, jointUbo, mesh, firstNode, firstMeshModel, null);
         shader.setUniformMat4At(u.view, view);
         shader.setUniformMat4At(u.projection, projection);
-        bindMaterial(u, textures, mesh.material, mesh.materialModelIndex, gltfModel, materialExtensionFlags);
+        bindMaterial(u, textures, mesh.material, mesh.materialModelIndex, gltfModel, materialExtensionFlags, config);
         setInt(u.uInstancedBatchCount, count);
         shader.setUniformMat4ArrayCached(u.uModelBatch, modelMatrices, count);
         drawIndexedDoubleSidedInstanced(mesh, count);
@@ -270,7 +266,8 @@ public final class GltfPbrRenderer {
         MaterialModelV2 m,
         int materialModelIndex,
         GltfModel gltfModel,
-        GltfMaterialExtensionFlags materialExtensionFlags
+        GltfMaterialExtensionFlags materialExtensionFlags,
+        GltfRenderConfig config
     ) {
         int pid = u.programId();
         if (LAST_MATERIAL.programId == pid && LAST_MATERIAL.materialIndex == materialModelIndex) {
